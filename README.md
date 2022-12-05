@@ -32,14 +32,14 @@ World of Tanks Blitz replay inspector in Rust. Uses [`eigenein/wotbreplay-parser
 ```
 ❯ wotbreplay-inspector 20221205_1409__zeekrab_A140_ASTRON_REX_105_2308651318200102307.wotbreplay battle-results --raw
 [
-  [
-    1,
-    {
+  {
+    "tag": 1,
+    "value": {
       "VarInt": {
         "as_u64": 65544,
         "as_i64": 32772
       }
     }
-  ],
+  },
 …
 ```

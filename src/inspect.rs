@@ -28,9 +28,15 @@ pub enum Value {
     Blob(String),
 }
 
+#[derive(Debug, Serialize)]
+pub struct Entry {
+    pub tag: u32,
+    pub value: Value,
+}
+
 /// Dynamic (schemaless) Protocol Buffers message.
 #[derive(Default, Debug, Serialize)]
-pub struct DynamicMessage(pub Vec<(u32, Value)>);
+pub struct DynamicMessage(pub Vec<Entry>);
 
 impl DynamicMessage {
     /// Decodes the message from the buffer.
@@ -87,11 +93,11 @@ impl DynamicMessage {
                 }
             };
             if let Some(value) = value {
-                this.0.push((tag, value));
+                this.0.push(Entry { tag, value });
             }
         }
 
-        this.0.sort_unstable_by_key(|(tag, _)| *tag);
+        this.0.sort_unstable_by_key(|entry| entry.tag);
         Ok(this)
     }
 }

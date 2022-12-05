@@ -13,6 +13,7 @@ mod options;
 mod prelude;
 
 use std::fs::File;
+use std::io::{stdout, Write};
 
 use clap::Parser;
 use wotbreplay_parser::models::BattleResults;
@@ -37,7 +38,7 @@ fn main() -> Result {
                 let message = BattleResults::parse(buffer)?;
                 serde_json::to_string_pretty(&message)?
             };
-            println!("{}", dump);
+            let _ = writeln!(stdout(), "{}", dump);
         }
     }
 
