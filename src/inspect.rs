@@ -1,5 +1,7 @@
 //! Protocol Buffers inspection.
 
+use std::path::{Path, PathBuf};
+
 use anyhow::ensure;
 use prost::bytes::Buf;
 use prost::encoding::{decode_key, decode_varint, WireType};
@@ -30,6 +32,7 @@ pub enum Value {
 
 #[derive(Debug, Serialize)]
 pub struct Entry {
+    pub root: PathBuf,
     pub tag: u32,
     pub value: Value,
 }
@@ -43,7 +46,7 @@ impl DynamicMessage {
     ///
     /// Because `prost` nor `prost-reflect` don't provide this kind of functionality,
     /// I've implemented it manually based on the low-level `prost` functions.
-    pub fn decode(buffer: &mut impl Buf) -> Result<Self> {
+    pub fn decode(buffer: &mut impl Buf, root: &Path) -> Result<Self> {
         let mut this = DynamicMessage::default();
 
         while buffer.remaining() != 0 {
@@ -69,7 +72,7 @@ impl DynamicMessage {
                     let length = decode_varint(buffer)? as usize;
                     ensure!(buffer.remaining() >= length);
                     let blob = buffer.copy_to_bytes(length);
-                    match DynamicMessage::decode(&mut blob.as_ref()) {
+                    match DynamicMessage::decode(&mut blob.as_ref(), &root.join(tag.to_string())) {
                         Ok(message) => Some(Value::Message(Box::new(message))),
                         Err(_) => Some(Value::Blob(String::from_utf8_lossy(&blob).into_owned())),
                     }
@@ -93,7 +96,11 @@ impl DynamicMessage {
                 }
             };
             if let Some(value) = value {
-                this.0.push(Entry { tag, value });
+                this.0.push(Entry {
+                    tag,
+                    value,
+                    root: root.into(),
+                });
             }
         }
 

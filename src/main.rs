@@ -14,6 +14,7 @@ mod prelude;
 
 use std::fs::File;
 use std::io::{stdout, Write};
+use std::path::PathBuf;
 
 use clap::Parser;
 use wotbreplay_parser::models::BattleResults;
@@ -32,7 +33,7 @@ fn main() -> Result {
             let battle_results_dat = replay.read_battle_results_dat()?;
             let buffer = &mut battle_results_dat.1.as_ref();
             let dump = if raw {
-                let message = DynamicMessage::decode(buffer)?;
+                let message = DynamicMessage::decode(buffer, &PathBuf::new())?;
                 serde_json::to_string_pretty(&message)?
             } else {
                 let message = BattleResults::parse(buffer)?;
