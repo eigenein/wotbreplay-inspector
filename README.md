@@ -7,3 +7,38 @@ World of Tanks Blitz replay inspector in Rust. Uses [`eigenein/wotbreplay-parser
 [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/eigenein/wotbreplay-inspector/Check)](https://github.com/eigenein/wotbreplay-inspector/actions)
 ![License: MIT](https://img.shields.io/crates/l/wotbreplay-inspector)
 [![docs.rs](https://img.shields.io/docsrs/wotbreplay-inspector)](https://docs.rs/wotbreplay-inspector)
+
+## Quickstart
+
+### Dump reverse-engineered fields as per `wotbreplay-parser`
+
+```
+❯ wotbreplay-inspector 20221205_1409__zeekrab_A140_ASTRON_REX_105_2308651318200102307.wotbreplay battle-results
+{
+  "timestamp": 1670245795,
+  "players": [
+    {
+      "account_id": 534505602,
+      "info": {
+        "nickname": "Roberto_Cadenas_Diaz",
+        "platoon_id": null,
+        "team_number": 2,
+        "clan_tag": "ORUGA"
+…
+```
+
+### Dump full raw structure
+
+```
+❯ wotbreplay-inspector 20221205_1409__zeekrab_A140_ASTRON_REX_105_2308651318200102307.wotbreplay battle-results --raw
+[
+  [
+    1,
+    {
+      "VarInt": {
+        "as_u64": 65544
+      }
+    }
+  ],
+…
+```
