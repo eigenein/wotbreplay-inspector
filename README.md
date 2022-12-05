@@ -36,7 +36,8 @@ World of Tanks Blitz replay inspector in Rust. Uses [`eigenein/wotbreplay-parser
     1,
     {
       "VarInt": {
-        "as_u64": 65544
+        "as_u64": 65544,
+        "as_i64": 32772
       }
     }
   ],

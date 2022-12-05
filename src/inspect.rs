@@ -8,17 +8,28 @@ use serde::Serialize;
 use crate::prelude::*;
 
 /// Represents a tagged value.
-#[derive(Debug, Serialize, Ord, Eq, PartialEq, PartialOrd)]
+#[derive(Debug, Serialize)]
 pub enum Value {
-    VarInt { as_u64: u64 },
-    Fixed32 { as_u32: u32 },
-    Fixed64 { as_u64: u64 },
+    VarInt {
+        as_u64: u64,
+        as_i64: i64,
+    },
+    Fixed32 {
+        as_u32: u32,
+        as_i32: i32,
+        as_f32: f32,
+    },
+    Fixed64 {
+        as_u64: u64,
+        as_i64: i64,
+        as_f64: f64,
+    },
     Message(Box<DynamicMessage>),
     Blob(String),
 }
 
 /// Dynamic (schemaless) Protocol Buffers message.
-#[derive(Default, Debug, Serialize, Ord, Eq, PartialEq, PartialOrd)]
+#[derive(Default, Debug, Serialize)]
 pub struct DynamicMessage(pub Vec<(u32, Value)>);
 
 impl DynamicMessage {
@@ -34,12 +45,19 @@ impl DynamicMessage {
             let value = match wire_type {
                 WireType::Varint => {
                     let as_u64 = decode_varint(buffer)?;
-                    Some(Value::VarInt { as_u64 })
+                    Some(Value::VarInt {
+                        as_u64,
+                        as_i64: from_uint64(as_u64),
+                    })
                 }
                 WireType::SixtyFourBit => {
                     ensure!(buffer.remaining() >= 8);
-                    let as_u64 = buffer.get_u64_le();
-                    Some(Value::Fixed64 { as_u64 })
+                    let bytes = buffer.copy_to_bytes(8);
+                    Some(Value::Fixed64 {
+                        as_u64: (&mut bytes.as_ref()).get_u64_le(),
+                        as_i64: (&mut bytes.as_ref()).get_i64_le(),
+                        as_f64: (&mut bytes.as_ref()).get_f64_le(),
+                    })
                 }
                 WireType::LengthDelimited => {
                     let length = decode_varint(buffer)? as usize;
@@ -60,8 +78,12 @@ impl DynamicMessage {
                 }
                 WireType::ThirtyTwoBit => {
                     ensure!(buffer.remaining() >= 4);
-                    let as_u32 = buffer.get_u32_le();
-                    Some(Value::Fixed32 { as_u32 })
+                    let bytes = buffer.copy_to_bytes(4);
+                    Some(Value::Fixed32 {
+                        as_u32: (&mut bytes.as_ref()).get_u32_le(),
+                        as_i32: (&mut bytes.as_ref()).get_i32_le(),
+                        as_f32: (&mut bytes.as_ref()).get_f32_le(),
+                    })
                 }
             };
             if let Some(value) = value {
@@ -69,7 +91,12 @@ impl DynamicMessage {
             }
         }
 
-        this.0.sort_unstable();
+        this.0.sort_unstable_by_key(|(tag, _)| *tag);
         Ok(this)
     }
+}
+
+/// Stolen from `prost::encoding`.
+const fn from_uint64(value: u64) -> i64 {
+    ((value >> 1) as i64) ^ (-((value & 1) as i64))
 }
