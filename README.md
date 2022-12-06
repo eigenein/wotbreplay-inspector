@@ -11,8 +11,11 @@ World of Tanks Blitz replay inspector in Rust. Uses [`eigenein/wotbreplay-parser
 
 ### Convert known fields into JSON
 
+```shell
+wotbreplay-inspector 20221205_1409__zeekrab_A140_ASTRON_REX_105_2308651318200102307.wotbreplay battle-results
 ```
-❯ wotbreplay-inspector 20221205_1409__zeekrab_A140_ASTRON_REX_105_2308651318200102307.wotbreplay battle-results
+
+```json5
 {
   "timestamp": 1670245795,
   "players": [
@@ -22,8 +25,8 @@ World of Tanks Blitz replay inspector in Rust. Uses [`eigenein/wotbreplay-parser
         "nickname": "Roberto_Cadenas_Diaz",
         "platoon_id": null,
         "team_number": 2,
-        "clan_tag": "ORUGA"
-…
+        "clan_tag": "ORUGA",
+// ...
 ```
 
 Note: this ignores any unknown fields.
@@ -32,24 +35,30 @@ Note: this ignores any unknown fields.
 
 Useful for manual inspection:
 
-```
-❯ wotbreplay-inspector 20221205_1409__zeekrab_A140_ASTRON_REX_105_2308651318200102307.wotbreplay battle-results --raw
-# 1: varint
-1 = { u64 = 65543, i64 = -32772 }
-# 2: varint
-2 = { u64 = 1670282196, i64 = 835141098 }
-# 3: varint
-3 = { u64 = 1, i64 = -1 }
-# 4: varint
-4 = { u64 = 1, i64 = -1 }
-# 5: varint
-5 = { u64 = 345, i64 = -173 }
-
-# start message #8
-[8]
-# 2: varint
-2 = { u64 = 32250, i64 = 16125 }
-…
+```shell
+wotbreplay-inspector 20221205_1409__zeekrab_A140_ASTRON_REX_105_2308651318200102307.wotbreplay battle-results --raw
 ```
 
-Tip: it's supposed to be `diff`-friendly to compare fields between different replays.
+```toml
+[[1]]
+type = "VarInt"
+unsigned = 65543
+signed = -32772
+
+[[2]]
+type = "VarInt"
+unsigned = 1670282196
+signed = 835141098
+
+[[3]]
+type = "VarInt"
+unsigned = 1
+signed = -1
+
+[[4]]
+type = "VarInt"
+unsigned = 1
+signed = -1
+
+# ...
+```

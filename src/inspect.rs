@@ -1,70 +1,63 @@
 //! Protocol Buffers inspection.
 
-mod inspector;
+mod models;
 mod visit;
+
+use std::collections::BTreeMap;
 
 use anyhow::{ensure, Context};
 use prost::bytes::Buf;
 use prost::encoding::{decode_key, decode_varint, WireType};
 
-pub use self::inspector::*;
-use self::visit::Visit;
+pub use self::models::*;
 use crate::prelude::*;
 
 /// Inspects the message in the buffer.
 ///
 /// Because `prost` nor `prost-reflect` don't provide this kind of functionality,
 /// I've implemented it manually based on the low-level `prost` functions.
-pub fn inspect(buffer: &[u8], visit: &mut impl Visit) -> Result {
+pub fn inspect(buffer: &[u8]) -> Result<Message> {
+    let mut fields: BTreeMap<Tag, Vec<Value>> = BTreeMap::new();
     let mut buffer = buffer;
+
     while buffer.remaining() != 0 {
         let (tag, wire_type) = decode_key(&mut buffer).context("failed to decode the field key")?;
-        match wire_type {
+        let tag = Tag(tag);
+        let value = match wire_type {
+            WireType::ThirtyTwoBit => Some(Value::fixed32(buffer.get_u32_le())),
+            WireType::SixtyFourBit => Some(Value::fixed64(buffer.get_u64_le())),
             WireType::Varint => {
                 let value = decode_varint(&mut buffer).with_context(|| {
-                    format!("failed to decode the varint value for tag {}", tag)
+                    format!("failed to decode the varint value for tag {}", tag.0)
                 })?;
-                visit.varint(tag, value);
-            }
-            WireType::ThirtyTwoBit => {
-                visit.fixed32(tag, buffer.get_u32_le());
-            }
-            WireType::SixtyFourBit => {
-                visit.fixed64(tag, buffer.get_u64_le());
-            }
-            WireType::StartGroup => {
-                visit.start_group(tag);
-            }
-            WireType::EndGroup => {
-                visit.end_group(tag);
+                Some(Value::varint(value))
             }
             WireType::LengthDelimited => {
                 let length = decode_varint(&mut buffer)
-                    .with_context(|| format!("failed to decode the length for tag {}", tag))?
+                    .with_context(|| format!("failed to decode the length for tag {}", tag.0))?
                     as usize;
                 let inner_buffer = &buffer[..length];
-                match validate_message(inner_buffer) {
+                let value = match validate_message(inner_buffer) {
                     Ok(_) => {
-                        visit.start_message(tag);
-                        inspect(inner_buffer, visit).with_context(|| {
-                            format!("failed to inspect the message for tag {}", tag)
+                        let message = inspect(inner_buffer).with_context(|| {
+                            format!("failed to inspect the message for tag {}", tag.0)
                         })?;
-                        visit.end_message(tag);
+                        Some(Value::Message(Box::new(message)))
                     }
-                    Err(_) => match std::str::from_utf8(inner_buffer) {
-                        Ok(value) => {
-                            visit.string(tag, value)?;
-                        }
-                        Err(_) => {
-                            visit.bytes(tag, inner_buffer)?;
-                        }
-                    },
-                }
+                    Err(_) => Some(Value::bytes(inner_buffer)),
+                };
                 buffer.advance(length);
+                value
             }
+            WireType::StartGroup => None,
+            WireType::EndGroup => None,
         };
+        if let Some(value) = value {
+            fields.entry(tag).or_default().push(value);
+        }
     }
-    Ok(())
+
+    Ok(Message(fields))
 }
 
 /// Validates correctness of the buffer prior to calling the visitor.

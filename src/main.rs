@@ -19,7 +19,7 @@ use clap::Parser;
 use wotbreplay_parser::models::BattleResults;
 use wotbreplay_parser::Replay;
 
-use crate::inspect::{inspect, Inspector};
+use crate::inspect::inspect;
 use crate::options::{Command, Options};
 use crate::prelude::*;
 
@@ -31,7 +31,8 @@ fn main() -> Result {
         Command::BattleResults { raw } => {
             let battle_results_dat = replay.read_battle_results_dat()?;
             if raw {
-                inspect(battle_results_dat.1.as_ref(), &mut Inspector::default())?;
+                let message = inspect(battle_results_dat.1.as_ref())?;
+                let _ = writeln!(stdout(), "{}", toml::to_string(&message)?);
             } else {
                 let message = BattleResults::parse(battle_results_dat.1.as_ref())?;
                 let _ = writeln!(stdout(), "{}", serde_json::to_string_pretty(&message)?);
