@@ -9,7 +9,7 @@ World of Tanks Blitz replay inspector in Rust. Uses [`eigenein/wotbreplay-parser
 
 ## Quickstart
 
-### Dump reverse-engineered fields as per `wotbreplay-parser`
+### Convert known fields into JSON
 
 ```
 ❯ wotbreplay-inspector 20221205_1409__zeekrab_A140_ASTRON_REX_105_2308651318200102307.wotbreplay battle-results
@@ -26,19 +26,30 @@ World of Tanks Blitz replay inspector in Rust. Uses [`eigenein/wotbreplay-parser
 …
 ```
 
-### Dump full raw structure
+Note: this ignores any unknown fields.
+
+### Dump full decoded structure into [TOML](https://toml.io)
+
+Useful for manual inspection:
 
 ```
 ❯ wotbreplay-inspector 20221205_1409__zeekrab_A140_ASTRON_REX_105_2308651318200102307.wotbreplay battle-results --raw
-[
-  {
-    "tag": 1,
-    "value": {
-      "VarInt": {
-        "as_u64": 65544,
-        "as_i64": 32772
-      }
-    }
-  },
+# 1: varint
+1 = { u64 = 65543, i64 = -32772 }
+# 2: varint
+2 = { u64 = 1670282196, i64 = 835141098 }
+# 3: varint
+3 = { u64 = 1, i64 = -1 }
+# 4: varint
+4 = { u64 = 1, i64 = -1 }
+# 5: varint
+5 = { u64 = 345, i64 = -173 }
+
+# start message #8
+[8]
+# 2: varint
+2 = { u64 = 32250, i64 = 16125 }
 …
 ```
+
+Tip: it's supposed to be `diff`-friendly to compare fields between different replays.

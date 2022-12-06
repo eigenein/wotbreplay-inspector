@@ -14,13 +14,12 @@ mod prelude;
 
 use std::fs::File;
 use std::io::{stdout, Write};
-use std::path::PathBuf;
 
 use clap::Parser;
 use wotbreplay_parser::models::BattleResults;
 use wotbreplay_parser::Replay;
 
-use crate::inspect::DynamicMessage;
+use crate::inspect::{inspect, Inspector};
 use crate::options::{Command, Options};
 use crate::prelude::*;
 
@@ -31,15 +30,12 @@ fn main() -> Result {
     match options.command {
         Command::BattleResults { raw } => {
             let battle_results_dat = replay.read_battle_results_dat()?;
-            let buffer = &mut battle_results_dat.1.as_ref();
-            let dump = if raw {
-                let message = DynamicMessage::decode(buffer, &PathBuf::new())?;
-                serde_json::to_string_pretty(&message)?
+            if raw {
+                inspect(battle_results_dat.1.as_ref(), &mut Inspector::default())?;
             } else {
-                let message = BattleResults::parse(buffer)?;
-                serde_json::to_string_pretty(&message)?
-            };
-            let _ = writeln!(stdout(), "{}", dump);
+                let message = BattleResults::parse(battle_results_dat.1.as_ref())?;
+                let _ = writeln!(stdout(), "{}", serde_json::to_string_pretty(&message)?);
+            }
         }
     }
 
