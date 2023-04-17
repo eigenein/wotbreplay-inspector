@@ -12,7 +12,7 @@ World of Tanks Blitz replay inspector in Rust. Uses [`eigenein/wotbreplay-parser
 ### Convert known fields into JSON
 
 ```shell
-wotbreplay-inspector 20221205_1409__zeekrab_A140_ASTRON_REX_105_2308651318200102307.wotbreplay battle-results
+wotbreplay-inspector battle-results 20221205_1409__zeekrab_A140_ASTRON_REX_105_2308651318200102307.wotbreplay
 ```
 
 ```json5
@@ -31,34 +31,10 @@ wotbreplay-inspector 20221205_1409__zeekrab_A140_ASTRON_REX_105_2308651318200102
 
 Note: this ignores any unknown fields.
 
-### Dump full decoded structure into [TOML](https://toml.io)
+### Dump full decoded structure into JSON
 
 Useful for manual inspection:
 
 ```shell
-wotbreplay-inspector 20221205_1409__zeekrab_A140_ASTRON_REX_105_2308651318200102307.wotbreplay battle-results --raw
-```
-
-```toml
-[[1]]
-type = "VarInt"
-unsigned = 65543
-signed = -32772
-
-[[2]]
-type = "VarInt"
-unsigned = 1670282196
-signed = 835141098
-
-[[3]]
-type = "VarInt"
-unsigned = 1
-signed = -1
-
-[[4]]
-type = "VarInt"
-unsigned = 1
-signed = -1
-
-# ...
+wotbreplay-inspector battle-results 20221205_1409__zeekrab_A140_ASTRON_REX_105_2308651318200102307.wotbreplay --raw
 ```

@@ -9,26 +9,35 @@ pub enum Value<'a> {
         unsigned: u64,
         signed: i64,
     },
+
     Fixed64 {
         #[serde(rename = "u64")]
         as_u64: u64,
+
         #[serde(rename = "i64")]
         as_i64: i64,
+
         #[serde(rename = "f64")]
         as_f64: f64,
     },
+
     Fixed32 {
         #[serde(rename = "u32")]
         as_u32: u32,
+
         #[serde(rename = "i32")]
         as_i32: i32,
+
         #[serde(rename = "f32")]
         as_f32: f32,
     },
+
     Message(Box<Message<'a>>),
+
     Bytes {
         #[serde(serialize_with = "hex::serde::serialize")]
         raw: &'a [u8],
+
         #[serde(skip_serializing_if = "Option::is_none", rename = "str")]
         as_str: Option<&'a str>,
     },

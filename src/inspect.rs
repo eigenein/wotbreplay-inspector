@@ -25,13 +25,16 @@ pub fn inspect(buffer: &[u8]) -> Result<Message> {
         let tag = Tag(tag);
         let value = match wire_type {
             WireType::ThirtyTwoBit => Some(Value::fixed32(buffer.get_u32_le())),
+
             WireType::SixtyFourBit => Some(Value::fixed64(buffer.get_u64_le())),
+
             WireType::Varint => {
                 let value = decode_varint(&mut buffer).with_context(|| {
                     format!("failed to decode the varint value for tag {}", tag.0)
                 })?;
                 Some(Value::varint(value))
             }
+
             WireType::LengthDelimited => {
                 let length = decode_varint(&mut buffer)
                     .with_context(|| format!("failed to decode the length for tag {}", tag.0))?
@@ -49,7 +52,9 @@ pub fn inspect(buffer: &[u8]) -> Result<Message> {
                 buffer.advance(length);
                 value
             }
+
             WireType::StartGroup => None,
+
             WireType::EndGroup => None,
         };
         if let Some(value) = value {
@@ -69,22 +74,28 @@ fn validate_message(buffer: &[u8]) -> Result {
             WireType::Varint => {
                 decode_varint(&mut buffer)?;
             }
+
             WireType::ThirtyTwoBit => {
                 ensure!(buffer.remaining() >= 4);
                 buffer.advance(4);
             }
+
             WireType::SixtyFourBit => {
                 ensure!(buffer.remaining() >= 8);
                 buffer.advance(8);
             }
+
             WireType::LengthDelimited => {
                 let length = decode_varint(&mut buffer)? as usize;
                 ensure!(buffer.remaining() >= length);
                 buffer.advance(length);
             }
+
             WireType::StartGroup => {}
+
             WireType::EndGroup => {}
         }
     }
+
     Ok(())
 }

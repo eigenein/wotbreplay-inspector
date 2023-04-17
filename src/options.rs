@@ -7,17 +7,23 @@ use clap::{Parser, Subcommand};
 pub struct Options {
     #[command(subcommand)]
     pub command: Command,
-
-    #[arg(value_name = "WOTBREPLAY_PATH")]
-    pub path: PathBuf,
 }
 
 #[derive(Subcommand)]
 pub enum Command {
     /// Inspect `battle_results.dat` and dump its contents as JSON.
     BattleResults {
+        #[arg(value_name = "WOTBREPLAY_PATH")]
+        path: PathBuf,
+
         /// Dump the entire structure and do not try to match any tags.
         #[arg(long)]
         raw: bool,
+    },
+
+    /// Watch the replays directory and print some battle results (experimental, in progress).
+    Watch {
+        #[arg(value_name = "WOTBREPLAYS_DIRECTORY")]
+        path: PathBuf,
     },
 }

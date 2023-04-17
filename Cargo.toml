@@ -17,8 +17,8 @@ default = []
 anyhow = "1.0.66"
 clap = { version = "4.0.29", features = ["derive"] }
 hex = { version = "0.4.3", features = ["serde"] }
+notify = "5.1.0"
 prost = { version = "0.11.3", default-features = false }
 serde = { version = "1.0.149", default-features = false, features = ["derive"] }
 serde_json = "1.0.89"
-toml = "0.7.3"
 wotbreplay-parser = "0.2.0-alpha.5"
