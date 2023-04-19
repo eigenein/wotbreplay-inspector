@@ -12,16 +12,21 @@ use crate::options::WatchOptions;
 use crate::prelude::*;
 
 pub struct WatchCommand {
+    /// TODO: watch `**/DAVAProject/battle_results/*/*_full.dat` – no need to open a replay.
     replays_path: PathBuf,
+
     db: Db,
+
     test_path: Option<PathBuf>,
 }
 
 impl WatchCommand {
     pub fn new(options: WatchOptions) -> Result<Self> {
+        let db = sled::open(options.database_path).context("failed to open the database")?;
+        println!("Rated users: {}", db.len());
         Ok(Self {
             replays_path: options.replays_path,
-            db: sled::open(options.database_path).context("failed to open the database")?,
+            db,
             test_path: options.test_path,
         })
     }
