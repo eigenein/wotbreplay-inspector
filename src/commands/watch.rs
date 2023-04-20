@@ -2,21 +2,18 @@ use std::fs::File;
 use std::path::PathBuf;
 
 use average::Mean;
-use notify::event::DataChange::Content;
-use notify::event::ModifyKind::Data;
+use notify::event::ModifyKind::Name;
+use notify::event::RenameMode;
 use notify::{EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use sled::Db;
-use wotbreplay_parser::prelude::{Player, Replay};
+use wotbreplay_parser::prelude::{BattleResults, BattleResultsDat, Player};
 
 use crate::options::WatchOptions;
 use crate::prelude::*;
 
 pub struct WatchCommand {
-    /// TODO: watch `**/DAVAProject/battle_results/*/*_full.dat` – no need to open a replay.
-    replays_path: PathBuf,
-
+    results_path: PathBuf,
     db: Db,
-
     test_path: Option<PathBuf>,
 }
 
@@ -25,7 +22,7 @@ impl WatchCommand {
         let db = sled::open(options.database_path).context("failed to open the database")?;
         println!("Rated users: {}", db.len());
         Ok(Self {
-            replays_path: options.replays_path,
+            results_path: options.results_path,
             db,
             test_path: options.test_path,
         })
@@ -33,40 +30,40 @@ impl WatchCommand {
 
     pub fn handle(&self) -> Result {
         if let Some(test_path) = &self.test_path {
-            self.handle_replay(test_path)?;
+            self.handle_battle_results(test_path)?;
         }
 
         let (tx, rx) = std::sync::mpsc::channel();
         let mut watcher = RecommendedWatcher::new(tx, notify::Config::default())?;
-        watcher.watch(&self.replays_path, RecursiveMode::NonRecursive)?;
+        watcher.watch(&self.results_path, RecursiveMode::NonRecursive)?;
 
         for result in rx {
             let event = result?;
-            if event.kind != EventKind::Modify(Data(Content)) {
+            if event.kind != EventKind::Modify(Name(RenameMode::Any)) {
                 continue;
             }
             for path in event.paths {
-                self.handle_replay(&path)?;
+                {
+                    let Some(path) = path.to_str() else { continue };
+                    if !path.ends_with("_full.dat") {
+                        continue;
+                    }
+                }
+                if let Err(error) = self.handle_battle_results(&path) {
+                    eprintln!("{error:#}");
+                }
             }
         }
 
         Ok(())
     }
 
-    fn handle_replay(&self, path: &PathBuf) -> Result {
+    fn handle_battle_results(&self, path: &PathBuf) -> Result {
         eprintln!("Parsing {:?}…", path.file_name());
-        let mut replay = Replay::open(File::open(path)?)?;
-        let battle_results_dat = match replay.read_battle_results_dat() {
-            Ok(battle_results_dat) => battle_results_dat,
-            Err(error) => {
-                eprintln!("failed to parse the replay: {:#}", error);
-                return Ok(());
-            }
-        };
+        let battle_results: BattleResults = BattleResultsDat::from_reader(File::open(path)?)
+            .context("failed to decode the battle results")?
+            .try_into()?;
 
-        let battle_results = battle_results_dat
-            .decode_battle_results()
-            .context("failed to decode the battle results")?;
         println!("Your team: #{}", battle_results.author.team_number);
         println!("Winning team: #{}", battle_results.winning_team);
         println!("Win: {}", battle_results.winning_team == battle_results.author.team_number);
@@ -98,6 +95,7 @@ impl WatchCommand {
 
         self.update_ratings(&battle_results.players, team_update_1, team_update_2)?;
 
+        println!("Done {:?}", path.file_name());
         Ok(())
     }
 

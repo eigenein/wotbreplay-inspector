@@ -30,8 +30,9 @@ pub struct BattleResultsOptions {
 
 #[derive(Parser)]
 pub struct WatchOptions {
-    #[arg(short = 'r', long, value_name = "REPLAYS_DIRECTORY")]
-    pub replays_path: PathBuf,
+    /// Directory path with the `**/DAVAProject/battle_results/*/*_full.dat` files.
+    #[arg(short = 'r', long, value_name = "RESULTS_DIRECTORY")]
+    pub results_path: PathBuf,
 
     #[arg(short = 'd', long, value_name = "DATABASE_DIRECTORY")]
     pub database_path: PathBuf,
