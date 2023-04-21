@@ -93,13 +93,20 @@ impl WatchCommand {
         };
         println!("Team #2 update: {team_update_2:.6}");
 
-        self.update_ratings(&battle_results.players, team_update_1, team_update_2)?;
+        let n_new_players =
+            self.update_ratings(&battle_results.players, team_update_1, team_update_2)?;
 
-        println!("Done {:?}", path.file_name());
+        println!("Done {:?}, new players: {n_new_players}", path.file_name());
         Ok(())
     }
 
-    fn update_ratings(&self, players: &[Player], team_update_1: f64, team_update_2: f64) -> Result {
+    fn update_ratings(
+        &self,
+        players: &[Player],
+        team_update_1: f64,
+        team_update_2: f64,
+    ) -> Result<usize> {
+        let mut n_new_players = 0;
         for player in players {
             let prior_rating = self.get_player_rating(player.account_id)?;
             let updated_rating = prior_rating
@@ -113,10 +120,12 @@ impl WatchCommand {
                 player.info.team, player.info.nickname,
             );
             if self.test_path.is_none() {
-                self.set_player_rating(player.account_id, updated_rating)?;
+                if self.set_player_rating(player.account_id, updated_rating)? {
+                    n_new_players += 1;
+                }
             }
         }
-        Ok(())
+        Ok(n_new_players)
     }
 
     fn calculate_team_rating(&self, players: &[Player], team_number: i32) -> Result<f64> {
@@ -135,9 +144,11 @@ impl WatchCommand {
         Ok(f64::from_be_bytes(value.as_ref().try_into()?))
     }
 
-    fn set_player_rating(&self, account_id: u32, rating: f64) -> Result {
-        self.db
-            .insert(account_id.to_be_bytes(), &rating.to_be_bytes())?;
-        Ok(())
+    fn set_player_rating(&self, account_id: u32, rating: f64) -> Result<bool> {
+        let is_new = self
+            .db
+            .insert(account_id.to_be_bytes(), &rating.to_be_bytes())?
+            .is_none();
+        Ok(is_new)
     }
 }
