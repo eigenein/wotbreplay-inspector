@@ -8,6 +8,7 @@ pub enum Value<'a> {
     VarInt {
         unsigned: u64,
         signed: i64,
+        wrapping_neg: u64,
     },
 
     Fixed64 {
@@ -32,14 +33,14 @@ pub enum Value<'a> {
         as_f32: f32,
     },
 
-    Message(Box<Message<'a>>),
-
     Bytes {
         #[serde(serialize_with = "hex::serde::serialize")]
         raw: &'a [u8],
 
         #[serde(skip_serializing_if = "Option::is_none", rename = "str")]
         as_str: Option<&'a str>,
+
+        message: Option<Box<Message<'a>>>,
     },
 }
 
@@ -48,6 +49,7 @@ impl<'a> Value<'a> {
         Self::VarInt {
             unsigned: value,
             signed: Self::zigzag(value),
+            wrapping_neg: value.wrapping_neg(),
         }
     }
 
@@ -64,13 +66,6 @@ impl<'a> Value<'a> {
             as_u32: value,
             as_i32: i32::from_le_bytes(value.to_le_bytes()),
             as_f32: f32::from_le_bytes(value.to_le_bytes()),
-        }
-    }
-
-    pub fn bytes(value: &'a [u8]) -> Self {
-        Self::Bytes {
-            raw: value,
-            as_str: std::str::from_utf8(value).ok(),
         }
     }
 

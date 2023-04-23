@@ -119,10 +119,10 @@ impl WatchCommand {
                 "[{}] {}: {prior_rating:.6} -> {updated_rating:.6}",
                 player.info.team, player.info.nickname,
             );
-            if self.test_path.is_none() {
-                if self.set_player_rating(player.account_id, updated_rating)? {
-                    n_new_players += 1;
-                }
+            if self.test_path.is_none()
+                && self.set_player_rating(player.account_id, updated_rating)?
+            {
+                n_new_players += 1;
             }
         }
         Ok(n_new_players)

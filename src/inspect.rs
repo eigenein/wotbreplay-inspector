@@ -40,15 +40,14 @@ pub fn inspect(buffer: &[u8]) -> Result<Message> {
                     .with_context(|| format!("failed to decode the length for tag {}", tag.0))?
                     as usize;
                 let inner_buffer = &buffer[..length];
-                let value = match validate_message(inner_buffer) {
-                    Ok(_) => {
-                        let message = inspect(inner_buffer).with_context(|| {
-                            format!("failed to inspect the message for tag {}", tag.0)
-                        })?;
-                        Some(Value::Message(Box::new(message)))
-                    }
-                    Err(_) => Some(Value::bytes(inner_buffer)),
-                };
+                let value = Some(Value::Bytes {
+                    raw: inner_buffer,
+                    as_str: std::str::from_utf8(inner_buffer).ok(),
+                    message: validate_message(inner_buffer)
+                        .and_then(|_| inspect(inner_buffer))
+                        .map(Box::new)
+                        .ok(),
+                });
                 buffer.advance(length);
                 value
             }
