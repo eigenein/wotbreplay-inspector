@@ -974,14 +974,15 @@ dependencies = [
 
 [[package]]
 name = "wotbreplay-parser"
-version = "0.2.0-alpha.8"
+version = "0.2.0-alpha.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "10ea10bd688ca0ee6e672c674ef4a8d736d625c8b2d8a4197a4d9f7867641d05"
+checksum = "9dc8fded688acae72ce5a30e99d0a700fd18ee1e9d5af4abc9cd59538f4bd820"
 dependencies = [
  "prost",
  "serde",
  "serde-pickle",
  "serde_bytes",
+ "serde_json",
  "thiserror",
  "zip",
 ]
