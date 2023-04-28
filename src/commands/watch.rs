@@ -4,7 +4,8 @@ use std::path::PathBuf;
 use average::Mean;
 use notify::event::{ModifyKind, RenameMode};
 use notify::{EventKind, RecommendedWatcher, RecursiveMode, Watcher};
-use sled::Db;
+use prost::Message;
+use sled::Tree;
 use wotbreplay_parser::prelude::{BattleResults, BattleResultsDat, Player};
 
 use crate::options::WatchOptions;
@@ -12,7 +13,7 @@ use crate::prelude::*;
 
 pub struct WatchCommand {
     results_path: PathBuf,
-    db: Db,
+    ratings: Tree,
     test_path: Option<PathBuf>,
 }
 
@@ -22,7 +23,7 @@ impl WatchCommand {
         println!("Rated users: {}", db.len());
         Ok(Self {
             results_path: options.results_path,
-            db,
+            ratings: db.open_tree("ratings")?,
             test_path: options.test_path,
         })
     }
@@ -60,16 +61,30 @@ impl WatchCommand {
         eprintln!("Parsing {:?}…", path.file_name());
         let battle_results = BattleResultsDat::from_reader(File::open(path)?)?;
         let arena_unique_id = battle_results.arena_unique_id;
-        let battle_results: BattleResults = battle_results.try_into()?;
+        let mut battle_results: BattleResults = battle_results.try_into()?;
 
         println!("Arena ID: {}", arena_unique_id);
         println!("Your team: #{}", battle_results.author.team_number);
-        println!("Winning team: #{}", battle_results.winning_team);
+        println!("Winner team: #{}", battle_results.winning_team);
         println!("Win: {}", battle_results.winning_team == battle_results.author.team_number);
 
-        let team_rating_1 = self.calculate_team_rating(&battle_results.players, 1)?;
+        let (mut team_1, mut team_2) = {
+            let mut players_1 = Vec::new();
+            let mut players_2 = Vec::new();
+            for player in battle_results.players.drain(..) {
+                let rating = RatingModel::get(&self.ratings, player.account_id)?;
+                match player.info.team {
+                    1 => players_1.push((player, rating)),
+                    2 => players_2.push((player, rating)),
+                    team => panic!("{team}"),
+                }
+            }
+            (Team(players_1), Team(players_2))
+        };
+
+        let team_rating_1 = team_1.calculate_rating();
         println!("Team #1 rating: {team_rating_1:.6}");
-        let team_rating_2 = self.calculate_team_rating(&battle_results.players, 2)?;
+        let team_rating_2 = team_2.calculate_rating();
         println!("Team #2 rating: {team_rating_2:.6}");
 
         let (actual_1, actual_2) = match battle_results.winning_team {
@@ -78,76 +93,105 @@ impl WatchCommand {
             _ => (0.5, 0.5), // Draw?
         };
 
-        const K: f64 = 0.02;
-        let team_update_1 = {
-            let expected_result = 1.0 / (1.0 + (team_rating_2 - team_rating_1).exp());
-            println!("Team #1 expectation: {expected_result:.6}");
-            K * (actual_1 - expected_result)
-        };
-        println!("Team #1 update: {team_update_1:.6}");
-        let team_update_2 = {
-            let expected_result = 1.0 / (1.0 + (team_rating_1 - team_rating_2).exp());
-            println!("Team #2 expectation: {expected_result:.6}");
-            K * (actual_2 - expected_result)
-        };
-        println!("Team #2 update: {team_update_2:.6}");
+        let expectation_1 = Self::calculate_expectation(team_rating_1, team_rating_2);
+        println!("Team #1 expectation: {expectation_1:.6}");
+        let expectation_2 = Self::calculate_expectation(team_rating_2, team_rating_1);
+        println!("Team #2 expectation: {expectation_2:.6}");
 
-        let n_new_players =
-            self.update_ratings(&battle_results.players, team_update_1, team_update_2)?;
+        println!("Team #1 updates:");
+        let n_new_players = team_1.update_ratings(
+            &self.ratings,
+            actual_1 - expectation_1,
+            self.test_path.is_some(),
+        )?;
+        println!("Team #2 updates:");
+        let n_new_players = n_new_players
+            + team_2.update_ratings(
+                &self.ratings,
+                actual_2 - expectation_2,
+                self.test_path.is_some(),
+            )?;
 
         println!("Done {arena_unique_id}, new players: {n_new_players}");
         Ok(())
     }
 
-    fn update_ratings(
-        &self,
-        players: &[Player],
-        team_update_1: f64,
-        team_update_2: f64,
+    fn calculate_expectation(ally_rating: f64, enemy_rating: f64) -> f64 {
+        1.0 / (1.0 + (enemy_rating - ally_rating).exp())
+    }
+}
+
+struct Team(pub Vec<(Player, RatingModel)>);
+
+impl Team {
+    pub fn calculate_rating(&self) -> f64 {
+        self.0
+            .iter()
+            .map(|(_, rating)| rating.rating)
+            .collect::<Mean>()
+            .mean()
+    }
+
+    pub fn update_ratings(
+        &mut self,
+        tree: &Tree,
+        rating_offset: f64,
+        dry_run: bool,
     ) -> Result<usize> {
         let mut n_new_players = 0;
-        for player in players {
-            let prior_rating = self.get_player_rating(player.account_id)?;
-            let updated_rating = prior_rating
-                + match player.info.team {
-                    1 => team_update_1,
-                    2 => team_update_2,
-                    _ => unreachable!(),
-                };
-            println!(
-                "[{}] {}: {prior_rating:.6} -> {updated_rating:.6}",
-                player.info.team, player.info.nickname,
-            );
-            if self.test_path.is_none()
-                && self.set_player_rating(player.account_id, updated_rating)?
-            {
+        for (player, rating) in self.0.iter_mut() {
+            if rating.update_rating(tree, player, rating_offset, dry_run)? {
                 n_new_players += 1;
             }
         }
         Ok(n_new_players)
     }
+}
 
-    fn calculate_team_rating(&self, players: &[Player], team_number: i32) -> Result<f64> {
-        let mean = players
-            .iter()
-            .filter(|player| player.info.team == team_number)
-            .map(|player| self.get_player_rating(player.account_id))
-            .collect::<Result<Mean>>()?;
-        Ok(mean.mean())
+#[derive(Message)]
+struct RatingModel {
+    #[prost(uint32, tag = "1")]
+    pub n_battles: u32,
+
+    #[prost(double, tag = "2")]
+    pub rating: f64,
+}
+
+impl RatingModel {
+    pub fn get(tree: &Tree, account_id: u32) -> Result<Self> {
+        let this = tree
+            .get(account_id.to_be_bytes())?
+            .map(|value| Self::decode(value.as_ref()))
+            .transpose()?
+            .unwrap_or_default();
+        Ok(this)
     }
 
-    fn get_player_rating(&self, account_id: u32) -> Result<f64> {
-        let Some(value) = self.db.get(account_id.to_be_bytes())? else {
-        return Ok(0.0);
-    };
-        Ok(f64::from_be_bytes(value.as_ref().try_into()?))
+    pub fn update(&self, tree: &Tree, account_id: u32) -> Result<bool> {
+        let last_value = tree.insert(account_id.to_be_bytes(), self.encode_to_vec())?;
+        Ok(last_value.is_none())
     }
 
-    fn set_player_rating(&self, account_id: u32, rating: f64) -> Result<bool> {
-        let is_new = self
-            .db
-            .insert(account_id.to_be_bytes(), &rating.to_be_bytes())?
-            .is_none();
-        Ok(is_new)
+    pub fn update_rating(
+        &mut self,
+        tree: &Tree,
+        player: &Player,
+        rating_offset: f64,
+        dry_run: bool,
+    ) -> Result<bool> {
+        /// Learning speed indexed by the number of battles.
+        const K: [f64; 9] = [0.2, 0.175, 0.15, 0.125, 0.1, 0.075, 0.05, 0.025, 0.02];
+
+        let k = K.get(self.n_battles as usize).copied().unwrap_or(0.01);
+        self.n_battles += 1;
+        let last_rating = self.rating;
+        self.rating += k * rating_offset;
+        println!("{}: {last_rating:.6} -> {:.6} (k={k:.4})", player.info.nickname, self.rating);
+
+        if !dry_run {
+            self.update(tree, player.account_id)
+        } else {
+            Ok(false)
+        }
     }
 }

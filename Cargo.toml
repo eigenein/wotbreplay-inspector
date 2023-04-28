@@ -18,7 +18,7 @@ anyhow = "1.0.66"
 average = { version = "0.13.1", default-features = false, features = ["std"] }
 clap = { version = "4.0.29", features = ["derive"] }
 hex = { version = "0.4.3", features = ["serde"] }
-notify = "5.1.0"
+notify = { version = "5.1.0", default-features = false, features = ["macos_kqueue"] }
 prost = { version = "0.11.3", default-features = false }
 serde = { version = "1.0.149", default-features = false, features = ["derive"] }
 serde_json = "1.0.89"
