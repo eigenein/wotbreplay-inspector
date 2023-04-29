@@ -6,7 +6,8 @@ use notify::event::{ModifyKind, RenameMode};
 use notify::{EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use prost::Message;
 use sled::Tree;
-use wotbreplay_parser::prelude::{BattleResults, BattleResultsDat, Player};
+use wotbreplay_parser::models::battle_results::{BattleResults, Player};
+use wotbreplay_parser::models::battle_results_dat::BattleResultsDat;
 
 use crate::options::WatchOptions;
 use crate::prelude::*;
@@ -65,8 +66,11 @@ impl WatchCommand {
 
         println!("Arena ID: {}", arena_unique_id);
         println!("Your team: #{}", battle_results.author.team_number);
-        println!("Winner team: #{}", battle_results.winning_team);
-        println!("Win: {}", battle_results.winning_team == battle_results.author.team_number);
+        println!("Winner team: #{}", battle_results.winner_team_number);
+        println!(
+            "Win: {}",
+            battle_results.winner_team_number == battle_results.author.team_number
+        );
 
         let (mut team_1, mut team_2) = {
             let mut players_1 = Vec::new();
@@ -87,7 +91,7 @@ impl WatchCommand {
         let team_rating_2 = team_2.calculate_rating();
         println!("Team #2 rating: {team_rating_2:.6}");
 
-        let (actual_1, actual_2) = match battle_results.winning_team {
+        let (actual_1, actual_2) = match battle_results.winner_team_number {
             1 => (1.0, 0.0),
             2 => (0.0, 1.0),
             _ => (0.5, 0.5), // Draw?

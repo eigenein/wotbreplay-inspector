@@ -1,7 +1,8 @@
 use std::fs::File;
 use std::io::{stdout, Write};
 
-use wotbreplay_parser::prelude::{BattleResults, Replay};
+use wotbreplay_parser::models::battle_results::BattleResults;
+use wotbreplay_parser::replay::Replay;
 
 use crate::inspect::inspect;
 use crate::options::BattleResultsOptions;
