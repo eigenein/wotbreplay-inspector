@@ -19,10 +19,10 @@ pub fn handle(options: BattleResultsOptions) -> Result {
         let message = inspect(buffer)?;
         let output =
             serde_json::to_string_pretty(&message).context("failed to serialize the output")?;
-        let _ = writeln!(stdout(), "{output}");
+        writeln!(stdout(), "{output}")?;
     } else {
         let message = BattleResults::from_buffer(buffer)?;
-        let _ = writeln!(stdout(), "{}", serde_json::to_string_pretty(&message)?);
+        writeln!(stdout(), "{}", serde_json::to_string_pretty(&message)?)?;
     }
     Ok(())
 }

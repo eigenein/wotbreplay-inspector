@@ -25,6 +25,7 @@ fn main() -> Result {
 
     match options.command {
         Command::BattleResults(options) => commands::results::handle(options),
+        Command::DumpData(options) => commands::dump_data::handle(options),
         Command::Watch(options) => WatchCommand::new(options)?.handle(),
     }
 }

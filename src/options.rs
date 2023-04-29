@@ -14,6 +14,9 @@ pub enum Command {
     /// Inspect `battle_results.dat` and dump its contents as JSON.
     BattleResults(BattleResultsOptions),
 
+    /// Dump `data.wotreplay` contents as JSON.
+    DumpData(DumpDataOptions),
+
     /// Watch the replays directory and print some battle results (experimental, in progress).
     Watch(WatchOptions),
 }
@@ -26,6 +29,12 @@ pub struct BattleResultsOptions {
     /// Dump the entire structure and do not try to match any tags.
     #[arg(long)]
     pub raw: bool,
+}
+
+#[derive(Parser)]
+pub struct DumpDataOptions {
+    #[arg(value_name = "WOTBREPLAY_PATH")]
+    pub path: PathBuf,
 }
 
 #[derive(Parser)]
