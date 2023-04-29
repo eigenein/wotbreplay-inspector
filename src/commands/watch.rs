@@ -180,7 +180,7 @@ impl RatingModel {
         dry_run: bool,
     ) -> Result<bool> {
         /// Learning speed indexed by the number of battles.
-        const K: [f64; 9] = [0.2, 0.175, 0.15, 0.125, 0.1, 0.075, 0.05, 0.025, 0.02];
+        const K: [f64; 10] = [0.5, 0.25, 0.2, 0.15, 0.125, 0.1, 0.075, 0.05, 0.025, 0.02];
 
         let k = K.get(self.n_battles as usize).copied().unwrap_or(0.01);
         self.n_battles += 1;
