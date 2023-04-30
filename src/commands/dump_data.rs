@@ -8,7 +8,8 @@ use crate::prelude::Result;
 
 pub fn handle(options: DumpDataOptions) -> Result {
     let mut replay = Replay::open(File::open(options.path)?)?;
-    let data = replay.read_data()?;
-    writeln!(stdout(), "{}", serde_json::to_string_pretty(&data)?)?;
+    for packet in replay.read_data()?.packets {
+        writeln!(stdout(), "{}", serde_json::to_string(&packet)?)?;
+    }
     Ok(())
 }

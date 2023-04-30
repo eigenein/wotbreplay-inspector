@@ -794,9 +794,9 @@ dependencies = [
 
 [[package]]
 name = "rustix"
-version = "0.37.17"
+version = "0.37.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc809f704c03a812ac71f22456c857be34185cac691a4316f27ab0f633bb9009"
+checksum = "8bbfc1d1c7c40c01715f47d71444744a81669ca84e8b63e25a55e169b1f86433"
 dependencies = [
  "bitflags",
  "errno",
@@ -1313,9 +1313,9 @@ dependencies = [
 
 [[package]]
 name = "wotbreplay-parser"
-version = "0.3.0-alpha.5"
+version = "0.3.0-alpha.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "712068e6c47cf6d8cbd93515f54a3aad25b26ef6fcee788ea4ba4a4ad34f0ac9"
+checksum = "736f7458af31bc2aa98063a2fa7aab183210012876d05433068a97addf3d72b8"
 dependencies = [
  "byteorder",
  "bytes",

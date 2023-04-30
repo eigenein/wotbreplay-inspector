@@ -14,7 +14,7 @@ pub enum Command {
     /// Inspect `battle_results.dat` and dump its contents as JSON.
     BattleResults(BattleResultsOptions),
 
-    /// Dump `data.wotreplay` contents as JSON.
+    /// Dump `data.wotreplay` packets as JSON lines.
     DumpData(DumpDataOptions),
 
     /// Watch the replays directory and print some battle results (experimental, in progress).
