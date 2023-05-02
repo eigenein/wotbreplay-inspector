@@ -184,16 +184,11 @@ impl RatingModel {
         rating_offset: f64,
         dry_run: bool,
     ) -> Result<bool> {
-        /// Learning speed indexed by the number of battles.
-        const K: [f64; 11] = [
-            1.0, 0.5, 0.25, 0.2, 0.15, 0.125, 0.1, 0.075, 0.05, 0.025, 0.02,
-        ];
-
-        let k = K.get(self.n_battles as usize).copied().unwrap_or(0.01);
+        let k = if self.n_battles < 4 { 1.0 } else { 0.01 };
         self.n_battles += 1;
         let last_rating = self.rating;
         self.rating += k * rating_offset;
-        println!("{}: {last_rating:.6} -> {:.6} (k={k:.4})", player.info.nickname, self.rating);
+        println!("{}: {last_rating:.6} -> {:.6} (k={k})", player.info.nickname, self.rating);
 
         if !dry_run {
             self.update(tree, player.account_id)
