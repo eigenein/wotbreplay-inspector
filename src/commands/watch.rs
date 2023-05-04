@@ -67,10 +67,10 @@ impl WatchCommand {
 
         println!("Arena ID: {}", arena_unique_id);
         println!("Your team: #{}", battle_results.author.team_number);
-        println!("Winner team: #{}", battle_results.winner_team_number);
+        println!("Winner team: #{:?}", battle_results.winner_team_number);
         println!(
             "Win: {}",
-            battle_results.winner_team_number == battle_results.author.team_number
+            battle_results.winner_team_number == Some(battle_results.author.team_number)
         );
 
         let (mut team_1, mut team_2) = {
@@ -93,9 +93,9 @@ impl WatchCommand {
         println!("Team #2 rating: {team_rating_2:.6}");
 
         let (actual_1, actual_2) = match battle_results.winner_team_number {
-            1 => (1.0, 0.0),
-            2 => (0.0, 1.0),
-            _ => (0.5, 0.5), // Draw?
+            Some(1) => (1.0, 0.0),
+            Some(2) => (0.0, 1.0),
+            _ => (0.5, 0.5),
         };
 
         let expectation_1 = Self::calculate_expectation(team_rating_1, team_rating_2);
