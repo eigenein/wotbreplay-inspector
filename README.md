@@ -4,7 +4,7 @@ World of Tanks Blitz replay inspector in Rust. Uses [`eigenein/wotbreplay-parser
 
 [![Crates.io](https://img.shields.io/crates/v/wotbreplay-inspector)](https://crates.io/crates/wotbreplay-inspector)
 [![Last commit](https://img.shields.io/github/last-commit/eigenein/wotbreplay-inspector)](https://github.com/eigenein/wotbreplay-inspector/commits/main)
-[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/eigenein/wotbreplay-inspector/Check)](https://github.com/eigenein/wotbreplay-inspector/actions)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/eigenein/wotbreplay-inspector/.github/workflows/check.yaml)](https://github.com/eigenein/wotbreplay-inspector/actions)
 ![License: MIT](https://img.shields.io/crates/l/wotbreplay-inspector)
 
 ## Quickstart
