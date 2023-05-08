@@ -11,14 +11,11 @@ pub struct Options {
 
 #[derive(Subcommand)]
 pub enum Command {
-    /// Inspect `battle_results.dat` and dump its contents as JSON.
+    /// Dump `battle_results.dat` contents as JSON.
     BattleResults(BattleResultsOptions),
 
     /// Dump `data.wotreplay` packets as JSON lines.
     DumpData(DumpDataOptions),
-
-    /// Watch the replays directory and print some battle results (experimental, in progress).
-    Watch(WatchOptions),
 }
 
 #[derive(Parser)]
@@ -35,16 +32,4 @@ pub struct BattleResultsOptions {
 pub struct DumpDataOptions {
     #[arg(value_name = "WOTBREPLAY_PATH")]
     pub path: PathBuf,
-}
-
-#[derive(Parser)]
-pub struct WatchOptions {
-    #[arg(short = 'r', long, value_name = "RESULTS_DIRECTORY")]
-    pub results_path: PathBuf,
-
-    #[arg(short = 'd', long, value_name = "DATABASE_DIRECTORY")]
-    pub database_path: PathBuf,
-
-    #[arg(short = 't', long)]
-    pub test_path: Option<PathBuf>,
 }

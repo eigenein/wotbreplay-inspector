@@ -16,16 +16,12 @@ mod prelude;
 
 use clap::Parser;
 
-use crate::commands::watch::WatchCommand;
 use crate::options::{Command, Options};
 use crate::prelude::*;
 
 fn main() -> Result {
-    let options = Options::parse();
-
-    match options.command {
+    match Options::parse().command {
         Command::BattleResults(options) => commands::results::handle(options),
         Command::DumpData(options) => commands::dump_data::handle(options),
-        Command::Watch(options) => WatchCommand::new(options)?.handle(),
     }
 }
