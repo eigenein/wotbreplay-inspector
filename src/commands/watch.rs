@@ -60,16 +60,19 @@ impl WatchCommand {
     }
 
     fn handle_result(&self, path: &PathBuf) -> Result {
-        eprintln!("Parsing {:?}…", path.file_name());
+        println!();
+        println!("⌛️ Parsing {:?}…", path.file_name());
+        println!();
+
         let battle_results = BattleResultsDat::from_reader(File::open(path)?)?;
         let arena_unique_id = battle_results.arena_unique_id;
         let mut battle_results: BattleResults = battle_results.try_into()?;
 
-        println!("Arena ID: {}", arena_unique_id);
-        println!("Your team: #{}", battle_results.author.team_number);
-        println!("Winner team: #{:?}", battle_results.winner_team_number);
+        println!("   Arena ID: {}", arena_unique_id);
+        println!("  Your team: {}", battle_results.author.team_number);
+        println!("Winner team: {:?}", battle_results.winner_team_number);
         println!(
-            "Win: {}",
+            "        Win: {}",
             battle_results.winner_team_number == Some(battle_results.author.team_number)
         );
 
@@ -87,10 +90,11 @@ impl WatchCommand {
             (Team(players_1), Team(players_2))
         };
 
+        println!();
         let team_rating_1 = team_1.calculate_rating();
-        println!("Team #1 rating: {team_rating_1:.6}");
+        println!("Team 1 rating: {team_rating_1:.6}");
         let team_rating_2 = team_2.calculate_rating();
-        println!("Team #2 rating: {team_rating_2:.6}");
+        println!("Team 2 rating: {team_rating_2:.6}");
 
         let (actual_1, actual_2) = match battle_results.winner_team_number {
             Some(1) => (1.0, 0.0),
@@ -98,18 +102,23 @@ impl WatchCommand {
             _ => (0.5, 0.5),
         };
 
+        println!();
         let expectation_1 = Self::calculate_expectation(team_rating_1, team_rating_2);
-        println!("Team #1 expectation: {expectation_1:.6}");
+        println!("Team 1 expectation: {expectation_1:.6}");
         let expectation_2 = Self::calculate_expectation(team_rating_2, team_rating_1);
-        println!("Team #2 expectation: {expectation_2:.6}");
+        println!("Team 2 expectation: {expectation_2:.6}");
 
-        println!("Team #1 updates:");
+        println!();
+        println!("TEAM 1");
+        println!();
         let n_new_players = team_1.update_ratings(
             &self.ratings,
             actual_1 - expectation_1,
             self.test_path.is_some(),
         )?;
-        println!("Team #2 updates:");
+        println!();
+        println!("TEAM 2");
+        println!();
         let n_new_players = n_new_players
             + team_2.update_ratings(
                 &self.ratings,
@@ -117,7 +126,8 @@ impl WatchCommand {
                 self.test_path.is_some(),
             )?;
 
-        println!("Done {arena_unique_id}, new players: {n_new_players}");
+        println!();
+        println!("✨ Done {arena_unique_id}, new players: {n_new_players}");
         Ok(())
     }
 
@@ -188,7 +198,7 @@ impl RatingModel {
         self.n_battles += 1;
         let last_rating = self.rating;
         self.rating += k * rating_offset;
-        println!("{}: {last_rating:.6} -> {:.6} (k={k})", player.info.nickname, self.rating);
+        println!("{:>23}: {last_rating:+.6} -> {:+.6} (k={k})", player.info.nickname, self.rating,);
 
         if !dry_run {
             self.update(tree, player.account_id)
