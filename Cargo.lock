@@ -871,9 +871,9 @@ dependencies = [
 
 [[package]]
 name = "wotbreplay-parser"
-version = "0.4.1"
+version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "13b37454a51063db614c1dc193ec94366a378fe2516612d34ce5d5c785ce5b30"
+checksum = "618cb637ed3a44f1e50162408b612274d32c805a41f65ec2755ec2dd608fba89"
 dependencies = [
  "byteorder",
  "bytes",
